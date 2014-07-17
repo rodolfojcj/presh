@@ -1,0 +1,10 @@
+#!/usr/bin/env php
+<?php
+  # TODO: maybe use getopt and some kind of dispatcher
+  require_once(dirname(__FILE__) . '/presh.php');
+  $presh = new Presh();
+  if ($argc < 2) exit("Not enough arguments. At least a method name to call is needed. Try with 'presh help'\n");
+  $method = $argv[1];
+  $params = array_slice($argv, 2);
+  call_user_func_array(array($presh, $method), $params);
+?>
