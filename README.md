@@ -55,3 +55,5 @@ Usage
     - To revert an applied patch to Prestashop version 1.5.4.1:
 
     $ presh external_fix_mail 1.5.4.1 /var/www/mystore true
+
+For mail fixing to work it is asssumed that a newer SwiftMailer is located at `tools/swift5/lib`. Versions `5.0.3`, `5.1.0` and `5.2.1` has been used fine.
