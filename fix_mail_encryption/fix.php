@@ -26,6 +26,7 @@ class FixMail {
   * @return boolean true if patch applied correctly, false otherwise
   */
   public function apply_patch($running_version, $install_dir, $reverse = false) {
+    $reverse = ($reverse === 'true' || $reverse === 1); // forced cast to boolean
     if(isset($this->PATCHES[$running_version])) {
       $patch_file = dirname(__FILE__) . "/patches/" . $this->PATCHES[$running_version];
       $patch_command = "patch -p1 < $patch_file";
