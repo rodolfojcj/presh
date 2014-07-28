@@ -8,7 +8,8 @@
     $running_version = $argv[2];
     $install_dir = $argv[3];
     $reverse = isset($argv[4]) ? $argv[4] : false;
-    echo $fix_mail->apply_patch($running_version, $install_dir, $reverse) . "\n";
+    $result = $fix_mail->apply_patch($running_version, $install_dir, $reverse);
+    echo $result == true ? "Patch operation applied successfully\n" : "Patch operation not applied :(\n";
   }
   else {
     require_once(dirname(__FILE__) . '/presh.php');
