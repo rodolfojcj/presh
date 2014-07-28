@@ -29,7 +29,9 @@ class Utils {
   */
   public static function write_to_temp_file($content) {
     $file_handle = tmpfile();
-    $file_path = stream_get_meta_data($file_handle)['uri'];
+    //$file_path = stream_get_meta_data($file_handle)['uri']; // requires PHP >= 5.4
+    $sgmd = stream_get_meta_data($file_handle);
+    $file_path = $sgmd['uri'];
     file_put_contents($file_path, $content);
     return $file_handle;
   }
@@ -41,7 +43,9 @@ class Utils {
   * @return string path of the file
   */
   public static function get_path_of_file_handle($handle) {
-    return stream_get_meta_data($handle)['uri'];
+    //return stream_get_meta_data($handle)['uri']; // requires PHP >= 5.4
+    $sgmd = stream_get_meta_data($handle);
+    return $sgmd['uri'];
   }
 }
 ?>
