@@ -19,7 +19,7 @@ class Presh {
     require_once(_PS_ROOT_DIR_ . '/classes/Configuration.php');
     require_once(_PS_ROOT_DIR_ . '/classes/Tools.php');
     require_once(_PRESH_DIR_ . '/utils.php');
-  }
+   }
   /**
   * Enables or disables the front of the shop
   *
@@ -101,7 +101,6 @@ class Presh {
   /**
   * Updates as many modules as possible from the Prestashop modules directory.
   *
-  * @param string $xml_modules_file xml config file to get modules metadata
   */
   public function update_modules() {
     $lang = $this->get_global_value('PS_LOCALE_LANGUAGE');
@@ -142,6 +141,36 @@ class Presh {
   }
 
   /**
+  * Gets the installation directory of Prestashop
+  *
+  * @return string installation directory
+  */
+  public function get_install_dir() {
+    return _PS_ROOT_DIR_;
+  }
+
+  /**
+  * Gets the running version of Prestashop
+  *
+  * @return string running Prestashop version
+  */
+  public function get_running_version() {
+    return $this->get_global_value('PS_VERSION_DB');
+  }
+
+  /**
+  * Tries to fix Prestashop issues with mail sending via SSL/TLS
+  *
+  */
+  public function fix_mail($reverse = false) {
+    // TODO test it with version 1.5.0 or newer
+    // It has not been tested, but it could work
+    require_once(_PRESH_DIR_ . '/fix_mail_encryption/fix.php');
+    $fm = new FixMail();
+    $fm->apply_patch($this->get_running_version(), $this->get_install_dir(), $reverse);
+  }
+
+  /**
   * Shows the available functionality of Presh
   *
   */
@@ -158,7 +187,7 @@ class Presh {
   *
   */
   public function version() {
-    echo "0.1.0-alpha";
+    echo "0.2.0-alpha";
     echo "\n";
   }
 }
