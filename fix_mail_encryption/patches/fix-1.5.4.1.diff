@@ -1,0 +1,333 @@
+diff --recursive --unified --new-file PrestaShop-1.5.4.1/classes/Mail.php PrestaShop-1.5.4.1-modified/classes/Mail.php
+--- PrestaShop-1.5.4.1/classes/Mail.php	2013-04-25 10:29:40.000000000 -0430
++++ PrestaShop-1.5.4.1-modified/classes/Mail.php	2014-07-27 20:39:46.195844652 -0430
+@@ -24,10 +24,14 @@
+ *  International Registered Trademark & Property of PrestaShop SA
+ */
+ 
++/*
++// inclusion of _PS_SWIFT_DIR_ files is removed to avoid conflict with a newer
++// version of SwiftMail forced to be used in the overriding Mail class
+ include_once(_PS_SWIFT_DIR_.'Swift.php');
+ include_once(_PS_SWIFT_DIR_.'Swift/Connection/SMTP.php');
+ include_once(_PS_SWIFT_DIR_.'Swift/Connection/NativeMail.php');
+ include_once(_PS_SWIFT_DIR_.'Swift/Plugin/Decorator.php');
++*/
+ 
+ class MailCore
+ {
+diff --recursive --unified --new-file PrestaShop-1.5.4.1/override/classes/Mail.php PrestaShop-1.5.4.1-modified/override/classes/Mail.php
+--- PrestaShop-1.5.4.1/override/classes/Mail.php	1969-12-31 20:00:00.000000000 -0400
++++ PrestaShop-1.5.4.1-modified/override/classes/Mail.php	2014-07-27 11:36:32.092761273 -0430
+@@ -0,0 +1,311 @@
++<?php
++/*
++* Changed Mail class to work with newer versions of Swift Mail library
++* due to failure to connect to mail servers via STARTTLS, like Postfix 2.9.x
++*/
++
++define('_PS_SWIFT5_DIR_', _PS_TOOL_DIR_.'swift5/lib/');
++require_once _PS_SWIFT5_DIR_ . 'swift_required.php';
++
++class Mail extends MailCore
++{
++	/**
++	 * Send Email
++	 * 
++	 * @param int $id_lang Language of the email (to translate the template)
++	 * @param string $template Template: the name of template not be a var but a string !
++	 * @param string $subject
++	 * @param string $template_vars
++	 * @param string $to
++	 * @param string $to_name
++	 * @param string $from
++	 * @param string $from_name
++	 * @param array $file_attachment Array with three parameters (content, mime and name). You can use an array of array to attach multiple files
++	 * @param bool $modeSMTP
++	 * @param string $template_path
++	 * @param bool $die
++	 */
++	public static function Send($id_lang, $template, $subject, $template_vars, $to,
++		$to_name = null, $from = null, $from_name = null, $file_attachment = null, $mode_smtp = null, $template_path = _PS_MAIL_DIR_, $die = false, $id_shop = null)
++	{
++		$configuration = Configuration::getMultiple(array(
++			'PS_SHOP_EMAIL',
++			'PS_MAIL_METHOD',
++			'PS_MAIL_SERVER',
++			'PS_MAIL_USER',
++			'PS_MAIL_PASSWD',
++			'PS_SHOP_NAME',
++			'PS_MAIL_SMTP_ENCRYPTION',
++			'PS_MAIL_SMTP_PORT',
++			'PS_MAIL_METHOD',
++			'PS_MAIL_TYPE'
++		), null, null, $id_shop);
++		
++		// Returns immediatly if emails are deactivated
++		if ($configuration['PS_MAIL_METHOD'] == 3)
++			return true;
++		
++		$theme_path = _PS_THEME_DIR_;
++
++		// Get the path of theme by id_shop if exist
++		if (is_numeric($id_shop) && $id_shop)
++		{
++			$shop = new Shop((int)$id_shop);
++			$theme_name = $shop->getTheme();
++
++			if (_THEME_NAME_ != $theme_name)
++				$theme_path = _PS_ROOT_DIR_.'/themes/'.$theme_name.'/';
++		}
++
++		if (!isset($configuration['PS_MAIL_SMTP_ENCRYPTION']))
++			$configuration['PS_MAIL_SMTP_ENCRYPTION'] = 'off';
++		if (!isset($configuration['PS_MAIL_SMTP_PORT']))
++			$configuration['PS_MAIL_SMTP_PORT'] = 'default';
++
++		// Sending an e-mail can be of vital importance for the merchant, when his password is lost for example, so we must not die but do our best to send the e-mail
++		if (!isset($from) || !Validate::isEmail($from))
++			$from = $configuration['PS_SHOP_EMAIL'];
++		if (!Validate::isEmail($from))
++			$from = null;
++
++		// $from_name is not that important, no need to die if it is not valid
++		if (!isset($from_name) || !Validate::isMailName($from_name))
++			$from_name = $configuration['PS_SHOP_NAME'];
++		if (!Validate::isMailName($from_name))
++			$from_name = null;
++
++		// It would be difficult to send an e-mail if the e-mail is not valid, so this time we can die if there is a problem
++		if (!is_array($to) && !Validate::isEmail($to))
++		{
++			Tools::dieOrLog(Tools::displayError('Error: parameter "to" is corrupted'), $die);
++			return false;
++		}
++
++		if (!is_array($template_vars))
++			$template_vars = array();
++
++		// Do not crash for this error, that may be a complicated customer name
++		if (is_string($to_name) && !empty($to_name) && !Validate::isMailName($to_name))
++			$to_name = null;
++
++		if (!Validate::isTplName($template))
++		{
++			Tools::dieOrLog(Tools::displayError('Error: invalid e-mail template'), $die);
++			return false;
++		}
++
++		if (!Validate::isMailSubject($subject))
++		{
++			Tools::dieOrLog(Tools::displayError('Error: invalid e-mail subject'), $die);
++			return false;
++		}
++
++		/* Construct multiple recipients list if needed */
++		if (is_array($to) && isset($to))
++		{
++			$to_list = array();
++			foreach ($to as $key => $addr)
++			{
++				$to_name = null;
++				$addr = trim($addr);
++				if (!Validate::isEmail($addr))
++				{
++					Tools::dieOrLog(Tools::displayError('Error: invalid e-mail address'), $die);
++					return false;
++				}
++				if (is_array($to_name))
++				{
++					if ($to_name && is_array($to_name) && Validate::isGenericName($to_name[$key]))
++						$to_name = $to_name[$key];
++				}
++				if ($to_name == null)
++					$to_name = $addr;
++				/* Encode accentuated chars */
++				$to_list[$addr] = '=?UTF-8?B?'.base64_encode($to_name).'?=';
++			}
++			$to_plugin = $to[0];
++			$to = $to_list;
++		} else {
++			/* Simple recipient, one address */
++			$to_plugin = $to;
++			if ($to_name == null)
++				$to_name = $to;
++			$to = new Swift_Address($to, '=?UTF-8?B?'.base64_encode($to_name).'?=');
++		}
++		try {
++			/* Connect with the appropriate configuration */
++			if ($configuration['PS_MAIL_METHOD'] == 2)
++			{
++				if (empty($configuration['PS_MAIL_SERVER']) || empty($configuration['PS_MAIL_SMTP_PORT']))
++				{
++					Tools::dieOrLog(Tools::displayError('Error: invalid SMTP server or SMTP port'), $die);
++					return false;
++				}
++        $transport = Swift_SmtpTransport::newInstance($configuration['PS_MAIL_SERVER'], $configuration['PS_MAIL_SMTP_PORT']);
++        if ($configuration['PS_MAIL_SMTP_ENCRYPTION'] == 'ssl' || $configuration['PS_MAIL_SMTP_ENCRYPTION'] == 'tls')
++          $transport->setEncryption($configuration['PS_MAIL_SMTP_ENCRYPTION']);
++        $transport->setTimeout(4);
++        if (!$transport)
++					return false;
++				if (!empty($configuration['PS_MAIL_USER']))
++					$transport->setUsername($configuration['PS_MAIL_USER']);
++				if (!empty($configuration['PS_MAIL_PASSWD']))
++					$transport->setPassword($configuration['PS_MAIL_PASSWD']);
++			}
++			else
++				$transport = Swift_MailTransport::newInstance(); // could it be encrypted?
++
++			if (!$transport)
++				return false;
++			$mailer = Swift_Mailer::newInstance($transport, Configuration::get('PS_MAIL_DOMAIN', null, null, $id_shop));
++			/* Get templates content */
++			$iso = Language::getIsoById((int)$id_lang);
++			if (!$iso)
++			{
++				Tools::dieOrLog(Tools::displayError('Error - No ISO code for email'), $die);
++				return false;
++			}
++			$template = $iso.'/'.$template;
++
++			$module_name = false;
++			$override_mail = false;
++
++			// get templatePath
++			if (preg_match('#'.__PS_BASE_URI__.'modules/#', str_replace(DIRECTORY_SEPARATOR, '/', $template_path)) && preg_match('#modules/([a-z0-9_-]+)/#ui', str_replace(DIRECTORY_SEPARATOR, '/',$template_path), $res))
++				$module_name = $res[1];
++
++			if ($module_name !== false && (file_exists($theme_path.'modules/'.$module_name.'/mails/'.$template.'.txt') ||
++				file_exists($theme_path.'modules/'.$module_name.'/mails/'.$template.'.html')))
++				$template_path = $theme_path.'modules/'.$module_name.'/mails/';
++			elseif (file_exists($theme_path.'mails/'.$template.'.txt') || file_exists($theme_path.'mails/'.$template.'.html'))
++			{
++				$template_path = $theme_path.'mails/';
++				$override_mail  = true;
++			}
++			if (!file_exists($template_path.$template.'.txt') && ($configuration['PS_MAIL_TYPE'] == Mail::TYPE_BOTH || $configuration['PS_MAIL_TYPE'] == Mail::TYPE_TEXT))
++			{
++				Tools::dieOrLog(Tools::displayError('Error - The following e-mail template is missing:').' '.$template_path.$template.'.txt', $die);
++				return false;
++			}
++			else if (!file_exists($template_path.$template.'.html') && ($configuration['PS_MAIL_TYPE'] == Mail::TYPE_BOTH || $configuration['PS_MAIL_TYPE'] == Mail::TYPE_HTML))
++			{
++				Tools::dieOrLog(Tools::displayError('Error - The following e-mail template is missing:').' '.$template_path.$template.'.html', $die);
++				return false;
++			}
++			$template_html = file_get_contents($template_path.$template.'.html');
++			$template_txt = strip_tags(html_entity_decode(file_get_contents($template_path.$template.'.txt'), null, 'utf-8'));
++
++			if ($override_mail && file_exists($template_path.$iso.'/lang.php'))
++					include_once($template_path.$iso.'/lang.php');
++			else if ($module_name && file_exists($theme_path.'mails/'.$iso.'/lang.php'))
++				include_once($theme_path.'mails/'.$iso.'/lang.php');
++			else
++				include_once(_PS_MAIL_DIR_.$iso.'/lang.php');
++
++			/* Create mail and attach differents parts */
++			$message = Swift_Message::newInstance('['.Configuration::get('PS_SHOP_NAME', null, null, $id_shop).'] '.$subject);
++
++      /* Set Message-ID - getmypid() is blocked on some hosting */
++      /*
++      // this cause error about malformed mail id according with some mentioned
++      // RFC. Without it no errors received, but it needs more tests in other
++      // running environments, so left here if needed
++      $message->setId(Mail::generateId());
++      */
++
++      /*
++      // this produces some error like method not exists, but left here to
++      // further review
++      $message->headers->setEncoding('Q');
++      */
++
++			if (Configuration::get('PS_LOGO_MAIL') !== false && file_exists(_PS_IMG_DIR_.Configuration::get('PS_LOGO_MAIL', null, null, $id_shop)))
++				$logo = _PS_IMG_DIR_.Configuration::get('PS_LOGO_MAIL', null, null, $id_shop);
++			else
++			{
++				if (file_exists(_PS_IMG_DIR_.Configuration::get('PS_LOGO', null, null, $id_shop)))
++					$logo = _PS_IMG_DIR_.Configuration::get('PS_LOGO', null, null, $id_shop);
++				else
++					$template_vars['{shop_logo}'] = '';
++			}
++
++			/* don't attach the logo as */
++			if (isset($logo))
++        $template_vars['{shop_logo}'] = $message->embed(Swift_EmbeddedFile::fromPath($logo));
++
++			$template_vars['{shop_name}'] = Tools::safeOutput(Configuration::get('PS_SHOP_NAME', null, null, $id_shop));
++			$template_vars['{shop_url}'] = Context::getContext()->link->getPageLink('index', true, Context::getContext()->language->id);
++			$template_vars['{my_account_url}'] = Context::getContext()->link->getPageLink('my-account', true, Context::getContext()->language->id);
++			$template_vars['{guest_tracking_url}'] = Context::getContext()->link->getPageLink('guest-tracking', true, Context::getContext()->language->id);
++			$template_vars['{history_url}'] = Context::getContext()->link->getPageLink('history', true, Context::getContext()->language->id);
++			$template_vars['{color}'] = Tools::safeOutput(Configuration::get('PS_MAIL_COLOR', null, null, $id_shop));
++      // use decorator plugin to allow send same template to different addresses
++      $plugin = new Swift_Plugins_DecoratorPlugin(array($to_plugin => $template_vars));
++      $mailer->registerPlugin($plugin);
++			if ($configuration['PS_MAIL_TYPE'] == Mail::TYPE_BOTH || $configuration['PS_MAIL_TYPE'] == Mail::TYPE_TEXT)
++        $message->addPart($template_txt, 'text/plain', 'utf-8');
++			if ($configuration['PS_MAIL_TYPE'] == Mail::TYPE_BOTH || $configuration['PS_MAIL_TYPE'] == Mail::TYPE_HTML)
++        $message->addPart($template_html, 'text/html', 'utf-8');
++			if ($file_attachment && !empty($file_attachment))
++			{
++				// Multiple attachments?
++				if (!is_array(current($file_attachment)))
++					$file_attachment = array($file_attachment);
++
++				foreach ($file_attachment as $attachment)
++					if (isset($attachment['content']) && isset($attachment['name']) && isset($attachment['mime']))
++            $message->attach(Swift_Attachment::newInstance($attachment['content'], $attachment['name'], $attachment['mime']));
++			}
++			/* Send mail */
++      $message->setFrom(array($from => $from_name));
++      $message->setTo($to);
++      $message->setBcc($to_bcc_list);
++      $send = ($mailer->send($message) > 0 ? true : false);
++			return $send;
++		}
++		catch (Swift_Exception $e) {
++			return false;
++		}
++	}
++
++	public static function sendMailTest($smtpChecked, $smtpServer, $content, $subject, $type, $to, $from, $smtpLogin, $smtpPassword, $smtpPort = 25, $smtpEncryption)
++	{
++		$transport = null;
++		$result = false;
++		try
++		{
++      if ($smtpChecked)
++      {
++        $transport = Swift_SmtpTransport::newInstance($smtpServer, $smtpPort);
++        if ($smtpEncryption === 'tls' || $smtpEncryption === 'ssl')
++        {
++          $transport->setEncryption($smtpEncryption);
++        }
++        $transport->setUsername($smtpLogin);
++        $transport->setPassword($smtpPassword);
++        $transport->setTimeout(5);
++      }
++			else
++        $transport = Swift_MailTransport::newInstance(); // could it be encrypted?
++
++      $mailer = Swift_Mailer::newInstance($transport, Configuration::get('PS_MAIL_DOMAIN'));
++      $message = Swift_Message::newInstance($subject);
++      $message->setFrom($from)->setTo($to)->setContentType($type);
++      $message->setBody($content);
++
++      // now send!
++      $result = ($mailer->send($message) > 0 ? true : false);
++		}
++		catch (Swift_TransportException $e)
++		{
++			$result = $e->getMessage();
++		}
++		/*catch (Swift_Message_MimeException $e)*/
++    catch (Exception $e)
++		{
++			$result = $e->getMessage();
++		}
++
++		return $result;
++	}
++}
