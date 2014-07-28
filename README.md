@@ -11,11 +11,12 @@ Envisioned features
 ===================
 
 - Have a roadmap to guide the development
-- Define some kind of convention that Prestashop modules could follow to be discovered and managed by presh
+- Define some kind of convention that Prestashop modules could follow to be discovered and managed by presh. This convention could also be used to modularize the composition of presh
 - Allow the definition of a full Prestashop site within a single plain text file; something similar to Drush Make
-- Allow modules and/or themes to de downloaded from a given URL or from some kind of repository (like Subversion, Git or Mercurial)
+- Allow modules and/or themes to be downloaded from a given URL or from some kind of repository (like Subversion, Git or Mercurial)
 - Provide site and/or database backing up and/or restoring functionalities
-- Distribute it via some kind of PHP component distribution, like [PEAR](http://pear.php.net/)
+- Distribute it via some kind of PHP component distribution, using [PEAR](http://pear.php.net/), [Composer](https://getcomposer.org/), [Packagist](https://packagist.org/) or some combination of such components
+- Have some king of flexible logging functionality
 
 Usage
 =====
@@ -42,3 +43,15 @@ Usage
     $ presh update_maintenance_status 0
 
     $ presh update_maintenance_status 1
+
+- Presh also offers a way to fix Prestashop problems with SSL/TLS mail sending. It could be used like the following examples:
+
+    - To patch Prestashop version 1.5.4.1, choose one of the following:
+
+    $ presh external_fix_mail 1.5.4.1 /var/www/mystore
+
+    $ presh external_fix_mail 1.5.4.1 /var/www/mystore false
+
+    - To revert an applied patch to Prestashop version 1.5.4.1:
+
+    $ presh external_fix_mail 1.5.4.1 /var/www/mystore true
