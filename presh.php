@@ -76,6 +76,69 @@ class Presh {
   }
 
   /**
+  * Sets the domain URL of your shop 
+  *
+  * @param string $domain domain URL
+  */
+  public function set_shop_domain($domain) {
+    $this->update_global_value('PS_SHOP_DOMAIN', $domain);
+  }
+
+  /**
+  * Enables or disables several settings for debugging purposes
+  *
+  * @param string $status status to set
+  */
+  public function set_debug_settings($status) {
+    $this->update_global_value('PS_DISABLE_NON_NATIVE_MODULE', $status);
+    $this->update_global_value('PS_DISABLE_OVERRIDES', $status);
+  }
+
+  /**
+  * Enables or disables several settings for peformance purposes
+  * through CCC (Combine, Compress and Cache)
+  *
+  * @param string $status status to set
+  */
+  public function optimize_via_ccc($status) {
+    $this->update_global_value('PS_CSS_THEME_CACHE', $status);
+    $this->update_global_value('PS_JS_THEME_CACHE', $status);
+    $this->update_global_value('PS_HTML_THEME_COMPRESSION', $status);
+    $this->update_global_value('PS_JS_HTML_THEME_COMPRESSION', $status);
+    $this->update_global_value('PS_JS_DEFER', $status);
+    $this->update_global_value('PS_HTACCESS_CACHE_CONTROL', $status);
+  }
+
+  /**
+  * Enables SMTP mail method and configures its related fields
+  *
+  * @param string $mail_domain fully qualified domain name for mails
+  * @param string $mail_server IP address or server name
+  * @param string $mail_user optional smtp user
+  * @param string $mail_passwd optional smtp password
+  * @param string $encryption_mode encryption protocol to use ('off' by default)
+  * @param string $port smtp port number to use (25 by default)
+  */
+  public function set_smtp_mailing($mail_domain, $mail_server, $mail_user,
+      $mail_passwd, $encryption_mode = 'off', $port = '25') {
+    $this->update_global_value('PS_MAIL_METHOD', 2); // "2" means "use SMTP"
+    $this->update_global_value('PS_MAIL_DOMAIN', $mail_domain);
+    $this->update_global_value('PS_MAIL_SERVER', $mail_server);
+    if ($mail_user != null && strlen($mail_user) > 0) {
+      $this->update_global_value('PS_MAIL_USER', $mail_user);
+    }
+    if ($mail_passwd != null && strlen($mail_passwd) > 0) {
+      $this->update_global_value('PS_MAIL_PASSWD', $mail_passwd);
+    }
+    if ($encryption_mode != null) {
+      $encryption_mode = strtolower($encryption_mode);
+      if ($encryption_mode == 'off' || $encryption_mode == 'tls' || $encryption_mode == 'ssl')
+        $this->update_global_value('PS_MAIL_SMTP_ENCRYPTION', $encryption_mode);
+    }
+    $this->update_global_value('PS_MAIL_SMTP_PORT', $port);
+  }
+
+  /**
   * Updates a global configuration variable, given its key name and new value
   *
   * @param string $key name of the variable to globally update
@@ -94,15 +157,6 @@ class Presh {
   */
   public function get_global_value($key) {
     return Configuration::getGlobalValue($key);
-  }
-
-  /**
-  * Sets the domain URL of your shop 
-  *
-  * @param string $domain domain URL
-  */
-  public function set_shop_domain($domain) {
-    $this->update_global_value('PS_SHOP_DOMAIN', $domain);
   }
 
   /**
