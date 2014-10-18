@@ -20,6 +20,7 @@ class Presh {
     require_once(_PS_ROOT_DIR_ . '/classes/Tools.php');
     require_once(_PRESH_DIR_ . '/utils.php');
    }
+
   /**
   * Enables or disables the front of the shop
   *
@@ -36,6 +37,24 @@ class Presh {
   public function toggle_maintenance_status() {
     $current_status = $this->get_global_value('PS_SHOP_ENABLE');
     $this->update_global_value('PS_SHOP_ENABLE', !$current_status);
+  }
+
+  /**
+  * Enables or disables the demo mode on the Dashboard
+  *
+  * @param string $status status to set
+  */
+  public function set_demo_mode($status) {
+    $this->update_global_value('PS_DASHBOARD_SIMULATION', $status);
+  }
+
+  /**
+  * Toggles the demo mode on the Dashboard
+  *
+  */
+  public function toggle_demo_mode() {
+    $current_status = $this->get_global_value('PS_DASHBOARD_SIMULATION');
+    $this->update_global_value('PS_DASHBOARD_SIMULATION', !$current_status);
   }
 
   /**
