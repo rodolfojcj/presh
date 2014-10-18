@@ -58,6 +58,24 @@ class Presh {
   }
 
   /**
+  * Toggles the Friendly URLs setting
+  *
+  */
+  public function toggle_friendly_urls() {
+    $current_status = $this->get_global_value('PS_REWRITING_SETTINGS');
+    $this->update_global_value('PS_REWRITING_SETTINGS', !$current_status);
+  }
+
+  /**
+  * Enables or disables the Friendly URLs setting
+  *
+  * @param string $status status to set
+  */
+  public function set_friendly_urls($status) {
+    $this->update_global_value('PS_REWRITING_SETTINGS', $status);
+  }
+
+  /**
   * Updates a global configuration variable, given its key name and new value
   *
   * @param string $key name of the variable to globally update
