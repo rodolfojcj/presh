@@ -95,7 +95,16 @@ class Presh {
   public function get_global_value($key) {
     return Configuration::getGlobalValue($key);
   }
-  
+
+  /**
+  * Sets the domain URL of your shop 
+  *
+  * @param string $domain domain URL
+  */
+  public function set_shop_domain($domain) {
+    $this->update_global_value('PS_SHOP_DOMAIN', $domain);
+  }
+
   /**
   * Installs a module given its name. The module has to be present on Prestashop
   * modules directory
