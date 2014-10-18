@@ -163,8 +163,6 @@ class Presh {
   *
   */
   public function fix_mail($reverse = false) {
-    // TODO test it with version 1.5.0 or newer
-    // It has not been tested, but it could work
     require_once(_PRESH_DIR_ . '/fix_mail_encryption/fix.php');
     $fm = new FixMail();
     $fm->apply_patch($this->get_running_version(), $this->get_install_dir(), $reverse);
