@@ -210,20 +210,22 @@ class Presh {
     $xml_tree = @simplexml_load_string($xml_content, null, LIBXML_NOCDATA);
     $modules_to_update = array();
     $modules_on_disk = Module::getModulesOnDisk(true, false, 1);
+
     foreach($modules_on_disk as $module) {
       if ($module->installed != true)
         continue;
       Module::initUpgradeModule($module);
-      $module_instance = Module::getInstanceByName($module->name);
-      if (Module::needUpgrade($module_instance) == true) {
-        $module_to_update[$module->name] = null;
-        foreach($xml_tree->module as $modaddons) {
-          if($module->name == $modaddons->name)
+
+      foreach($xml_tree->module as $modaddons) {
+        if($module->name == $modaddons->name) {
+          if (Tools::version_compare($module->version, $modaddons->version, '<')) {
             $modules_to_update[$module->name]['id'] = $modaddons->id;
+          }
         }
       }
     }
-    foreach($modules_to_update as $k => $module) {
+
+    foreach($modules_to_update as $module_name => $module) {
       $file_handle = Utils::write_to_temp_file(Tools::addonsRequest('module',
         array('iso_lang' => $lang, 'iso_code' => $country,
         'id_module' => $module['id'])));
@@ -236,6 +238,10 @@ class Presh {
           # because I am not sure if updating is done at this step
         default:
           continue;
+      }
+      $module_instance = Module::getInstanceByName($module_name);
+      if (Module::needUpgrade($module_instance) == true) {
+        $module_instance->runUpgradeModule();
       }
     }
   }
