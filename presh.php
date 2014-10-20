@@ -167,11 +167,44 @@ class Presh {
   * @return bool true when successfully installed, false otherwise
   */
   public function install_module($name) {
-    if (!Module::getInstanceByName($name)) {
-      $module_instance = Module::getInstanceByName($name);
-      return $module_instance->install();
-    }
-    return false;
+    $module_instance = Module::getInstanceByName($name);
+    return $module_instance->install();
+  }
+
+  /**
+  * Uninstalls a module given its name. The module has to be present on
+  * Prestashop modules directory
+  *
+  * @param string $name name of the module to uninstall
+  * @return bool true when successfully uninstalled, false otherwise
+  */
+  public function uninstall_module($name) {
+    $module_instance = Module::getInstanceByName($name);
+    return $module_instance->uninstall();
+  }
+
+  /**
+  * Enables a module given its name.
+  * It is expected to have a module directory inside
+  * Prestashop modules directory named like the 'name' parameter
+  *
+  * @param string $name name of the module to enable
+  * @return bool true when successfully enabled, false otherwise
+  */
+  public function enable_module($name) {
+    return Module::enableByName($name);
+  }
+
+  /**
+  * Disables a module given its name.
+  * It is expected to have a module directory inside
+  * Prestashop modules directory named like the 'name' parameter
+  *
+  * @param string $name name of the module to disable
+  * @return bool true when successfully disabled, false otherwise
+  */
+  public function disable_module($name) {
+    return Module::disableByName($name);
   }
 
   /**
