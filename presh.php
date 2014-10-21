@@ -208,6 +208,15 @@ class Presh {
   }
 
   /**
+  * Lists installed modules in the store
+  *
+  */
+  public function list_modules_installed() {
+    foreach(Module::getModulesInstalled() as $m)
+      echo $m['name'] . "\n";
+  }
+
+  /**
   * Downloads a module given its url to the Prestashop modules directory.
   * The downloaded file is expected to be in zip format.
   * It is also expected the uncompressed file will contain a module as first directory.
