@@ -24,17 +24,17 @@ class Presh {
   /**
   * Enables or disables the front of the shop
   *
-  * @param string $status status to set
+  * @param string $status status to set: true to activate, false to deactivate
   */
-  public function set_maintenance_status($status) {
+  public function activate_shop($status) {
     $this->update_global_value('PS_SHOP_ENABLE', $status);
   }
 
   /**
-  * Toggles the maintenance status of the shop
+  * Toggles the activation status of the shop
   *
   */
-  public function toggle_maintenance_status() {
+  public function toggle_activation_status() {
     $current_status = $this->get_global_value('PS_SHOP_ENABLE');
     $this->update_global_value('PS_SHOP_ENABLE', !$current_status);
   }
