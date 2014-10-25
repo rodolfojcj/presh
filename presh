@@ -1,22 +1,10 @@
 #!/usr/bin/env php
 <?php
   # TODO: maybe use getopt and some kind of dispatcher
-  $module = $argv[1];
-  if ($module == "external_fix_mail") {
-    require_once(dirname(__FILE__) . '/fix_mail_encryption/fix.php');
-    $fix_mail = new FixMail();
-    $running_version = $argv[2];
-    $install_dir = $argv[3];
-    $reverse = isset($argv[4]) ? $argv[4] : false;
-    $result = $fix_mail->apply_patch($running_version, $install_dir, $reverse);
-    echo $result == true ? "Patch operation applied successfully\n" : "Patch operation not applied :(\n";
-  }
-  else {
-    require_once(dirname(__FILE__) . '/presh.php');
-    $presh = new Presh();
-    if ($argc < 2) exit("Not enough arguments. At least a method name to call is needed. Try with 'presh help'\n");
-    $method = $argv[1];
-    $params = array_slice($argv, 2);
-    call_user_func_array(array($presh, $method), $params);
-  }
+  require_once(dirname(__FILE__) . '/presh.php');
+  $presh = new Presh();
+  if ($argc < 2) exit("Not enough arguments. At least a method name to call is needed. Try with 'presh help'\n");
+  $method = $argv[1];
+  $params = array_slice($argv, 2);
+  call_user_func_array(array($presh, $method), $params);
 ?>

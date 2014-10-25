@@ -309,11 +309,57 @@ class Presh {
   /**
   * Tries to fix Prestashop issues with mail sending via SSL/TLS
   *
+  * @param bool $reverse indicates wheter a reverse patch will be applied, so changes
+  * to Prestashop core files will be reverted. It is false by default, so a forward
+  * patch will be applied
+  * @param bool $try_to_get_swift flags if a suitable version of Swift Mailer library
+  * will be downloaded if needed. It is true by default
+  * @return bool the result of trying to apply the patch file
+  *
   */
-  public function fix_mail($reverse = false) {
+  public function fix_mail($reverse = false, $try_to_get_swift = true) {
+    if ($reverse == true)
+      Tools::deleteDirectory(_PS_ROOT_DIR_ . '/tools/swift5/lib');
+    // get Swift Mailer
+    if ($try_to_get_swift == true && $reverse == false)
+      $this->get_swift_mailer_library();
     require_once(_PRESH_DIR_ . '/fix_mail_encryption/fix.php');
     $fm = new FixMail();
-    $fm->apply_patch($this->get_running_version(), $this->get_install_dir(), $reverse);
+    return $fm->apply_patch($this->get_running_version(),
+      $this->get_install_dir(), $reverse);
+  }
+
+  /**
+  * Downloads Swift Mailer library
+  *
+  * @param string $url URL to download Swift Mailer from. If none specified
+  * it will be gotten from its official GitHub repository
+  * @param string $version Swift Mailer version to get (5.2.2 by default)
+  *
+  */
+  public function get_swift_mailer_library($url = '', $version = '5.2.2') {
+    $dst_lib_dir = _PS_ROOT_DIR_ . '/tools/swift5/lib';
+    if (file_exists($dst_lib_dir)) // do nothing if already exists
+      return;
+    else
+      mkdir($dst_lib_dir, 0755, true); // or create it if not exists
+    if ($url == null || $url == '') {
+      $url = 'https://github.com/swiftmailer/swiftmailer/archive/v' . $version . '.zip';
+    }
+    $tmp_dir = Utils::create_temp_dir();
+    $src_lib_dir = $tmp_dir . DIRECTORY_SEPARATOR . 'swiftmailer-' . $version . DIRECTORY_SEPARATOR . 'lib';
+    $file_handle = Utils::write_to_temp_file(Tools::file_get_contents($url));
+    $file_path = Utils::get_path_of_file_handle($file_handle);
+    $file_type = Utils::get_file_magic_type($file_path);
+    switch ($file_type) {
+      case "application/zip":
+        Tools::ZipExtract($file_path, $tmp_dir);
+        break;
+      default:
+        return;
+    }
+    Tools::recurseCopy($src_lib_dir, $dst_lib_dir);
+    Tools::deleteDirectory($tmp_dir);
   }
 
   /**

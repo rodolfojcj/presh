@@ -47,5 +47,24 @@ class Utils {
     $sgmd = stream_get_meta_data($handle);
     return $sgmd['uri'];
   }
+
+  /**
+  * Creates a temporary directory inside the system's temporary directory
+  *
+  * @param string $dirname name of the directory to create. It's empty by
+  * default and in this case a unique name will be used (kind of random name)
+  * @param int $umask permission umask in octal mode (e.g 0777 and not 777)
+  * @return string path of temporary directory created
+  */
+  public static function create_temp_dir($dirname = '', $umask = 0755) {
+    $tmp_base = sys_get_temp_dir();
+    if ($dirname == null || $dirname == '')
+      $dirname = uniqid();
+    $full_path = $tmp_base . DIRECTORY_SEPARATOR . $dirname;
+    if (mkdir($full_path, $umask))
+      return $full_path;
+    else
+      return null;
+  }
 }
 ?>
