@@ -9,6 +9,8 @@
 
 class Presh {
 
+  const SECONDS_IN_A_WEEK = 604800; // 60 * 60 * 24 * 7
+
   /**
   * Constructor
   */
@@ -248,6 +250,7 @@ class Presh {
     $lang = $this->get_global_value('PS_LOCALE_LANGUAGE');
     $country = $this->get_global_value('PS_LOCALE_COUNTRY');
     $xml_file = _PS_ROOT_DIR_ . '/config/xml/modules_native_addons.xml';
+    $this->update_modules_xml_file($xml_file, 'native_all');
     $xml_content = Tools::file_get_contents($xml_file);
     $xml_tree = @simplexml_load_string($xml_content, null, LIBXML_NOCDATA);
     $modules_to_update = array();
@@ -286,6 +289,24 @@ class Presh {
         $module_instance->runUpgradeModule();
       }
     }
+  }
+
+  /**
+  * Updates a given file with the contents available in the Prestashop
+  * addons online resource. It is assumed that the given file exists inside
+  * the /config/xml/ subdirectory of a Prestashop installation.
+  *
+  * @param string $file xml file to update
+  * @param string $request_type type of request to use with the addons web site
+  * @param int $timeout max age, in seconds, of the given file to be considered
+  * as updated before doing a new update
+  */
+  public function update_modules_xml_file($file, $request_type, $timeout = SECONDS_IN_A_WEEK) {
+    $file_age = 0;
+    if (file_exists($file) && filesize($file) > 0)
+      $file_age = time() - filemtime($file);
+    if ($file_age >= $timeout || $file_age == 0)
+      file_put_contents($file, Tools::addonsRequest($request_type));
   }
 
   /**
