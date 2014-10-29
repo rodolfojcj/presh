@@ -72,18 +72,24 @@ class Presh {
   * Enables or disables the Friendly URLs setting
   *
   * @param string $status status to set
+  * @param bool $generate_htaccess whether to invoke .htaccess file generation
+  * functionality (true by default)
   */
-  public function set_friendly_urls($status) {
+  public function set_friendly_urls($status, $generate_htaccess = true) {
     $this->update_global_value('PS_REWRITING_SETTINGS', $status);
+    Tools::generateHtaccess();
   }
 
   /**
   * Sets the domain URL of your shop 
   *
   * @param string $domain domain URL
+  * @param bool $generate_htaccess whether to invoke .htaccess file generation
+  * functionality (true by default)
   */
-  public function set_shop_domain($domain) {
+  public function set_shop_domain($domain, $generate_htaccess = true) {
     $this->update_global_value('PS_SHOP_DOMAIN', $domain);
+    Tools::generateHtaccess();
   }
 
   /**
