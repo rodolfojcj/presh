@@ -390,6 +390,167 @@ class Presh {
   }
 
   /**
+  * Wipes out the catalog, sales and stores data of a Prestashop installation,
+  * hopefully being the sample data installed by default. This is a dangerous
+  * and potentially destructive operation, because it can evaporate your real
+  * products, categories, sales and related data. This function internally
+  * uses the 'pscleaner' module
+  *
+  * @param string $confirmation Fixed string expected to confirm you are
+  * not mad. It is null by default so it is required to explicitly pass a first
+  * argument expected to be "Do It, I Am Completely Sure This Will Destroy My Data"
+  * if you really want to evaporate the data (there is no 'undo' option)
+  * @param bool $verify_is_only_sample_data flag to check if the database contains
+  * only the sample data loaded by the installer, prior to attempt the cleaning
+  * @param bool $restore_initial_status flag to indicate the uninstalling and/or
+  * deletion of the 'pscleaner' module, so its state is the same it had at the
+  * beginning of this function
+  *
+  */
+  public function clean_sample_data($confirmation = null,
+                                    $restore_initial_status = true,
+                                    $verify_is_only_sample_data = true) {
+    // TODO: review what is useful here
+    // http://stackoverflow.com/questions/15277017/prestashop-delete-all-testing-data-before-production
+    // http://maiolab.net/deleting-demo-data-in-default-prestashop-database/
+    if ($confirmation == null || $confirmation != 'Do It, I Am Completely Sure This Will Destroy My Data')
+      return;
+    if ($verify_is_only_sample_data) {
+      if (!$this->is_only_sample_data_installed())
+        return;
+    }
+    $mod_dir = _PS_ROOT_DIR_ . '/modules/pscleaner/';
+    $initially_installed = Module::isInstalled('pscleaner');
+    $initially_enabled = Module::isEnabled('pscleaner');
+    $initially_exists_dir = file_exists($mod_dir);
+    if (!$initially_installed) {
+      $xml_file = _PS_ROOT_DIR_ . '/config/xml/modules_native_addons.xml';
+      $xml_raw_content = Tools::file_get_contents($xml_file);
+      $id = null;
+      if ($xml_tree = simplexml_load_string($xml_raw_content, null, LIBXML_NOCDATA))
+        foreach($xml_tree->module as $modaddons) {
+          if ('pscleaner' == $modaddons->name) {
+            $id = $modaddons->id;
+            break;
+          }
+        }
+      if ($id) {
+        $file_handle = Utils::write_to_temp_file(Tools::addonsRequest('module', array('id_module' => pSQL($id))));
+        $file_path = Utils::get_path_of_file_handle($file_handle);
+        $file_type = Utils::get_file_magic_type($file_path);
+        switch ($file_type) {
+          case "application/zip":
+            Tools::ZipExtract($file_path, _PS_ROOT_DIR_ . '/modules/');
+            break;
+          default:
+            return;
+        }
+        $this->install_module('pscleaner');
+      }
+    } // end if (!$initially_installed)
+    if (!Module::isEnabled('pscleaner'))
+      $this->enable_module('pscleaner');
+
+    $module_instance = Module::getInstanceByName('pscleaner');
+    if ($module_instance) {
+      $module_instance->truncate('catalog');
+      $module_instance->truncate('sales');
+    }
+    //
+    if ($restore_initial_status) {
+      if (!$initially_enabled)
+        $this->disable_module('pscleaner');
+      if (!$initially_installed)
+        $this->uninstall_module('pscleaner');
+      if (!$initially_exists_dir)
+        Tools::deleteDirectory($mod_dir);
+    }
+    // TODO: propose to 'pscleaner' developers some code to clean
+    // sample stores and then remove this part
+    Db::getInstance()->executeS('TRUNCATE TABLE `' . _DB_PREFIX_ . 'store`');
+    Db::getInstance()->executeS('TRUNCATE TABLE `' . _DB_PREFIX_ . 'store_shop`');
+    foreach (scandir(_PS_STORE_IMG_DIR_) as $file_or_dir)
+      if (preg_match('/^[0-9]+(\-(.*))?\.jpg$/', $file_or_dir) &&
+          is_file(_PS_STORE_IMG_DIR_ . $file_or_dir))
+        unlink(_PS_STORE_IMG_DIR_ . $file_or_dir);
+  }
+
+   /**
+  * Review customers, products, categories and stores data to check if it only
+  * corresponds to the sample data of catalog and sales loaded by the
+  * Prestashop installer, also checking if the Prestashop version installed
+  * is compatible with this function
+  * @return bool true if only sample data is present, false otherwise
+  *
+  */
+  public function is_only_sample_data_installed() {
+    if (!(Tools::version_compare($this->get_running_version(), '1.6.0.0', '>=') &&
+          Tools::version_compare($this->get_running_version(), '1.6.0.9', '<=')))
+      return false;
+    // a) john doe
+    $customers = Customer::getCustomers();
+    if (count($customers) != 1)
+      return false;
+    $customer_john = $customers[0]; 
+    if (!($customer_john['email'] == 'pub@prestashop.com' &&
+          $customer_john['firstname'] == 'John' &&
+          $customer_john['lastname'] == 'DOE'))
+      return false;
+    // b) products
+    $id_lang = Context::getContext()->language->id;
+    $sample_products = Product::getProducts($id_lang, 0, 0, 'name', 'asc');
+    if (count($sample_products) != 7)
+      return false;
+    //$sample_products_names = array_column($sample_products, 'name'); // requires PHP >= 5.5
+    $sample_products_names = array_map(function ($v){ return $v['name']; }, $sample_products);
+    asort($sample_products_names);
+    $expected_products_names = array('Blouse', 'Faded Short Sleeve T-shirts',
+      'Printed Chiffon Dress', 'Printed Dress', 'Printed Dress',
+      'Printed Summer Dress', 'Printed Summer Dress'
+    );
+    asort($expected_products_names);
+    if (count(array_diff($sample_products_names, $expected_products_names)) != 0)
+      return false;
+    // c) categories
+    // Category::getCategories($id_lang, false)
+    // Category::getNestedCategories(null, $id_lang, false)
+    // Category::getSimpleCategories($id_lang)
+    // Category::getHomeCategories($id_lang, false)
+    // Category::getRootCategory($id_lang)
+    $simple_categories = Category::getSimpleCategories($id_lang);
+    if (count($simple_categories) != 10)
+      return false;
+    $root_category = Category::getRootCategory($id_lang);
+    $sample_categories = array_filter($simple_categories,
+      function($it) use($root_category) {
+        return $it['id_category'] != $root_category->id_category;
+      }
+    );
+    $sample_categories_names = array_map(function ($v){ return $v['name']; }, $sample_categories);
+    asort($sample_categories_names);
+    $expected_categories_names = array('Blouses', 'Casual Dresses',
+      'Dresses', 'Evening Dresses', 'Summer Dresses', 'T-shirts',
+      'Tops', 'Tops', 'Women'
+    );
+    asort($expected_categories_names);
+    if (count(array_diff($sample_categories_names, $expected_categories_names)) != 0)
+      return false;
+    // d) stores
+    $sample_stores = Db::getInstance()->executeS('SELECT name from ' . _DB_PREFIX_. 'store');
+    if (count($sample_stores) != 5)
+      return false;
+    $sample_stores_names = array_map(function ($v){ return $v['name']; }, $sample_stores);
+    asort($sample_stores_names);
+    $expected_stores_names = array('Coconut Grove', 'Dade County',
+      'E Fort Lauderdale', 'N Miami/Biscayne', 'Pembroke Pines'
+    );
+    if (count(array_diff($sample_stores_names, $expected_stores_names)) != 0)
+      return false;
+    // if all test passed, then it is only sample data
+    return true;
+  }
+
+  /**
   * Shows the available functionality of Presh
   *
   */
