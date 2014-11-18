@@ -263,8 +263,10 @@ class Presh {
     $modules_on_disk = Module::getModulesOnDisk(true, false, 1);
 
     foreach($modules_on_disk as $module) {
-      if ($module->installed != true)
-        continue;
+      // it seems some modules (like 'blockbanner') can have its 'installed'
+      // attribute empty, so it's better to update it anyway
+      //if ($module->installed != true)
+      //  continue;
       Module::initUpgradeModule($module);
 
       foreach($xml_tree->module as $modaddons) {
