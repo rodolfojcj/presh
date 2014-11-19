@@ -477,6 +477,10 @@ class Presh {
         unlink(_PS_STORE_IMG_DIR_ . $file_or_dir);
     // banners in themeconfigurator hooks
     Db::getInstance()->executeS('TRUNCATE TABLE `' . _DB_PREFIX_ . 'themeconfigurator`');
+    // slides in homeslider
+    Db::getInstance()->executeS('TRUNCATE TABLE `' . _DB_PREFIX_ . 'homeslider`');
+    Db::getInstance()->executeS('TRUNCATE TABLE `' . _DB_PREFIX_ . 'homeslider_slides`');
+    Db::getInstance()->executeS('TRUNCATE TABLE `' . _DB_PREFIX_ . 'homeslider_slides_lang`');
   }
 
    /**
@@ -561,6 +565,17 @@ class Presh {
       'banner-img6.jpg', 'banner-img7.jpg'
     );
     if (count(array_diff($sample_tc_banners_images, $expected_tc_banners_images)) != 0)
+      return false;
+    // f) slides in homeslider
+    $sample_slides = Db::getInstance()->executeS('SELECT image from ' . _DB_PREFIX_. 'homeslider_slides_lang');
+    if (count($sample_slides != 3))
+      return false;
+    $sample_slides_images = array_map(function ($v){ return $v['image']; }, $sample_slides);
+    asort($sample_slides_images);
+    $expected_slides_images = array('sample-1.jpg', 'sample-2.jpg',
+      'sample-3.jpg'
+    );
+    if (count(array_diff($sample_slides_images, $expected_slides_images)) != 0)
       return false;
     // if all test passed, then it is only sample data
     return true;
