@@ -475,6 +475,8 @@ class Presh {
       if (preg_match('/^[0-9]+(\-(.*))?\.jpg$/', $file_or_dir) &&
           is_file(_PS_STORE_IMG_DIR_ . $file_or_dir))
         unlink(_PS_STORE_IMG_DIR_ . $file_or_dir);
+    // banners in themeconfigurator hooks
+    Db::getInstance()->executeS('TRUNCATE TABLE `' . _DB_PREFIX_ . 'themeconfigurator`');
   }
 
    /**
