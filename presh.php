@@ -478,9 +478,15 @@ class Presh {
     // banners in themeconfigurator hooks
     Db::getInstance()->executeS('TRUNCATE TABLE `' . _DB_PREFIX_ . 'themeconfigurator`');
     // slides in homeslider
+    // TODO: propose to 'pscleaner' developers some code to clean
+    // sample slides and then remove this part
     Db::getInstance()->executeS('TRUNCATE TABLE `' . _DB_PREFIX_ . 'homeslider`');
     Db::getInstance()->executeS('TRUNCATE TABLE `' . _DB_PREFIX_ . 'homeslider_slides`');
     Db::getInstance()->executeS('TRUNCATE TABLE `' . _DB_PREFIX_ . 'homeslider_slides_lang`');
+    foreach (scandir(_PS_MODULE_DIR_ . 'homeslider/images/') as $file_or_dir)
+      if (preg_match('/^sample-[123]\.jpg$/', $file_or_dir) &&
+          is_file(_PS_MODULE_DIR_ . 'homeslider/images/' . $file_or_dir))
+        unlink(_PS_MODULE_DIR_ . 'homeslider/images/' . $file_or_dir);
   }
 
    /**
