@@ -548,6 +548,18 @@ class Presh {
     );
     if (count(array_diff($sample_stores_names, $expected_stores_names)) != 0)
       return false;
+    // e) banners in themeconfigurator
+    $sample_tc_banners = Db::getInstance()->executeS('SELECT name from ' . _DB_PREFIX_. 'themeconfigurator');
+    if (count($sample_tc_banners != 7))
+      return false;
+    $sample_tc_banners_images = array_map(function ($v){ return $v['image']; }, $sample_tc_banners);
+    asort($sample_tc_banners_images);
+    $expected_tc_banners_images = array('banner-img1.jpg', 'banner-img2.jpg',
+      'banner-img3.jpg', 'banner-img4.jpg', 'banner-img5.jpg',
+      'banner-img6.jpg', 'banner-img7.jpg'
+    );
+    if (count(array_diff($sample_tc_banners_images, $expected_tc_banners_images)) != 0)
+      return false;
     // if all test passed, then it is only sample data
     return true;
   }
