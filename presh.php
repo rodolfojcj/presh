@@ -168,6 +168,23 @@ class Presh {
   }
 
   /**
+  * Updates a database table column, given its name, column and new value.
+  * Its goal is to serve as a quick way to update some module option or, in
+  * a more general sense, to update one or more columns of a given table,
+  * optionally given a where clause
+  *
+  * @param string $table name of the table to update
+  * @param string $data associative array containing column's values
+  * @param string $where optional where condition
+  * @return bool true when successfully updated, false otherwise
+  */
+  public function update_table($table, $data, $where = '') {
+    // we need $data as array, not as string
+    eval("\$data = $data;");
+    return Db::getInstance()->update($table, $data, $where);
+  }
+
+ /**
   * Installs a module given its name. The module has to be present on Prestashop
   * modules directory
   *
