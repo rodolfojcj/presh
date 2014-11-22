@@ -508,6 +508,9 @@ class Presh {
         unlink(_PS_MODULE_DIR_ . 'homeslider/images/' . $file_or_dir);
       }
     }
+    // info blocks near footer
+    Db::getInstance()->executeS('TRUNCATE TABLE `' . _DB_PREFIX_ . 'info`');
+    Db::getInstance()->executeS('TRUNCATE TABLE `' . _DB_PREFIX_ . 'info_lang`');
   }
 
    /**
@@ -604,6 +607,15 @@ class Presh {
     );
     if (count(array_diff($sample_slides_images, $expected_slides_images)) != 0)
       return false;
+    // g) info blocks in front page
+    $sample_info_blocks = Db::getInstance()->executeS('SELECT text from ' . _DB_PREFIX_. 'info_lang');
+    if (count($sample_info_blocks) != 2)
+      return false;
+    $pattern = '/Lorem ipsum/';
+    foreach($sample_info_blocks as $info_block) {
+      if (preg_match($pattern, $info_block['text']) != 1)
+        return false;
+    }
     // if all test passed, then it is only sample data
     return true;
   }
