@@ -583,7 +583,7 @@ class Presh {
       return false;
     // e) banners in themeconfigurator
     $sample_tc_banners = Db::getInstance()->executeS('SELECT image from ' . _DB_PREFIX_. 'themeconfigurator');
-    if (count($sample_tc_banners != 7))
+    if (count($sample_tc_banners) != 7)
       return false;
     $sample_tc_banners_images = array_map(function ($v){ return $v['image']; }, $sample_tc_banners);
     asort($sample_tc_banners_images);
@@ -595,7 +595,7 @@ class Presh {
       return false;
     // f) slides in homeslider
     $sample_slides = Db::getInstance()->executeS('SELECT image from ' . _DB_PREFIX_. 'homeslider_slides_lang');
-    if (count($sample_slides != 3))
+    if (count($sample_slides) != 3)
       return false;
     $sample_slides_images = array_map(function ($v){ return $v['image']; }, $sample_slides);
     asort($sample_slides_images);
