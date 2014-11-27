@@ -621,6 +621,25 @@ class Presh {
   }
 
   /**
+  * Encrypts a given value, which is supposed to be unique for the current shop
+  *
+  * @param string $value value to encrypt
+  * @return string encrypted value
+  */
+  public function encrypt($value = '') {
+    return Tools::encrypt($value);
+  }
+
+  /**
+  * Encrypts and prints a given value, which is supposed to be unique for the current shop
+  *
+  * @param string $value value to encrypt
+  */
+  public function encrypt_and_print($value) {
+    echo $this->encrypt($value);
+  }
+
+  /**
   * Shows the available functionality of Presh
   *
   */
