@@ -640,6 +640,15 @@ class Presh {
   }
 
   /**
+  * Deletes the cache classes index file at cache/class_index.php
+  *
+  * @return bool true if the file is deleted
+  */
+  public function delete_cache_class_index_file($value) {
+    return unlink(_PS_ROOT_DIR_ . '/cache/class_index.php');
+  }
+
+  /**
   * Shows the available functionality of Presh
   *
   */
