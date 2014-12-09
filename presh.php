@@ -81,6 +81,17 @@ class Presh {
   }
 
   /**
+  * Sets the canonical URL redirection type returned by the web server
+  *
+  * @param string $type redirection type to set (0 = None, 1 = 302, 2 = 301)
+  */
+  public function set_canonical_redirect($type) {
+    if ((int)$type != 1 || (int)$type != 2)
+      $type = 0;
+    $this->update_global_value('PS_CANONICAL_REDIRECT', $type);
+  }
+
+  /**
   * Sets the domain URL of your shop 
   *
   * @param string $domain domain URL
