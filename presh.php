@@ -649,6 +649,18 @@ class Presh {
   public function encrypt_and_print($value) {
     echo $this->encrypt($value);
   }
+  
+  /**
+  * Runs given file on Prestashop environment
+  *
+  * @param string $file value to run
+  */
+  public function run($file){
+      if(is_readable ($file)){
+          return require($file);
+      }
+  }
+  
 
   /**
   * Deletes the cache classes index file at cache/class_index.php
