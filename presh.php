@@ -657,6 +657,7 @@ class Presh {
   */
   public function run($file){
       if(is_readable ($file)){
+          $argv = func_get_args();
           return require($file);
       }
   }
