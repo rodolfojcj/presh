@@ -13,7 +13,8 @@ class FixMail {
   private $PATCHES = array(
     "1.5.4.1" => "fix-1.5.4.1.diff",
     "1.5.6.2" => "fix-1.5.6.2.diff",
-    "1.6.0.9" => "fix-1.6.0.9.diff"
+    "1.6.0.9" => "fix-1.6.0.9.diff",
+    "1.6.1.4" => "fix-1.6.1.4.diff"
   );
 
   /**
